@@ -1,0 +1,17 @@
+[package]
+name = "mempool"
+version = "0.1.0"
+authors = ["drklee3 <derrick@dlee.dev>"]
+edition = "2018"
+
+[lib]
+name = "mempool"
+path = "src/lib.rs"
+
+[[bin]]
+name = "transaction-prioritizer"
+path = "src/main.rs"
+
+[dependencies]
+structopt = "0.3.22"
+thiserror = "1.0.26"
