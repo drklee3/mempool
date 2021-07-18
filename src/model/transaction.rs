@@ -25,9 +25,9 @@ impl<'a> TryFrom<&'a str> for Transaction {
     fn try_from(s: &'a str) -> Result<Self, Self::Error> {
         // HashMap of key=value
         let mut kv_pairs = s
-            .split(" ")
+            .split(' ')
             .map(|kv| {
-                let mut iter = kv.split("=");
+                let mut iter = kv.split('=');
 
                 let key = iter
                     .next()
@@ -65,8 +65,11 @@ impl fmt::Display for Transaction {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "Fee={} TxHash={} Gas={} FeePerGas={} Signature={}",
-            self.fee().0, self.tx_hash, self.gas, self.fee_per_gas, self.signature
+            "TxHash={} Gas={} FeePerGas={} Signature={}",
+            self.tx_hash,
+            self.gas,
+            self.fee_per_gas,
+            self.signature
         )
     }
 }

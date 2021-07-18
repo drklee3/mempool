@@ -9,7 +9,7 @@ name = "mempool"
 path = "src/lib.rs"
 
 [[bin]]
-name = "transaction-prioritizer"
+name = "mempool"
 path = "src/main.rs"
 
 [dependencies]

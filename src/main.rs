@@ -9,20 +9,15 @@ use mempool::error::Error;
 use mempool::model::{Fee, Mempool, Transaction};
 
 #[derive(Debug, StructOpt)]
-#[structopt(name = "example", about = "An example of StructOpt usage.")]
+#[structopt(name = "mempool", about = "Prioritizes transactions.")]
 struct Opt {
-    /// Activate debug mode
-    // short and long flags (-d, --debug) will be deduced from the field's name
-    #[structopt(short, long)]
-    debug: bool,
-
-    /// Input file
+    /// Input file of transactions
     #[structopt(parse(from_os_str))]
     input: PathBuf,
 
-    /// Output file, stdout if not present
-    #[structopt(parse(from_os_str))]
-    output: PathBuf,
+    /// Output file of prioritized transactions in mempool. stdout if not provided.
+    #[structopt(short, parse(from_os_str))]
+    output: Option<PathBuf>,
 }
 
 fn main() -> Result<(), Box<dyn StdError>> {
@@ -40,11 +35,19 @@ fn main() -> Result<(), Box<dyn StdError>> {
         pool.insert(transaction.fee(), transaction);
     }
 
-    let mut file = File::create(opt.output)?;
+    let mut file = if let Some(output) = opt.output {
+        Some(File::create(output)?)
+    } else {
+        None
+    };
 
-    // Iterate through reversed
+    // Iterate through reversed to go from largest to smallest
     for transaction in pool.data.values().rev() {
-        writeln!(file, "{}", transaction)?;
+        if let Some(ref mut file) = file {
+            writeln!(file, "{}", transaction)?;
+        } else {
+            println!("{}", transaction);
+        }
     }
 
     Ok(())
