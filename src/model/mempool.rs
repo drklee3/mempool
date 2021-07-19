@@ -11,10 +11,11 @@ pub struct Mempool<K, V> {
     pub data: BTreeMap<K, V>,
     /// Max size of mempool. The value with the smallest key will be removed if
     /// inserting a new item will exceed this size.
-    pub max_size: Option<u64>,
+    pub max_size: Option<usize>,
 }
 
 impl<K: Ord + Clone, V> Mempool<K, V> {
+    /// Create a new mempool with an unbound size.
     pub fn new() -> Self {
         Mempool {
             data: BTreeMap::new(),
@@ -22,11 +23,8 @@ impl<K: Ord + Clone, V> Mempool<K, V> {
         }
     }
 
-    pub fn max_size(&mut self, max_size: u64) -> Self {
-        self.max_size.replace(max_size)
-    }
-
-    pub fn new_with_capacity(max_size: u64) -> Self {
+    /// Creates a new mempool with a provided maximum size.
+    pub fn new_with_capacity(max_size: usize) -> Self {
         Mempool {
             data: BTreeMap::new(),
             max_size: Some(max_size),
@@ -42,11 +40,101 @@ impl<K: Ord + Clone, V> Mempool<K, V> {
                 let smallest_key = self.data.keys().next().cloned();
 
                 if let Some(smallest_key) = smallest_key {
-                    self.data.remove(&smallest_key);
+                    // Only remove the key if it does **not** exist in the pool
+                    // This prevents unnecessarily removing an item when there
+                    // is a duplicate key.
+                    if !self.data.contains_key(&key) {
+                        self.data.remove(&smallest_key);
+                    }
                 }
             }
         }
 
         self.data.insert(key, value)
+    }
+
+    /// Remove and returns the value with the largest key.
+    pub fn pop(&mut self) -> Option<V> {
+        let key = self.data.keys().next().cloned();
+        key.and_then(|k| self.data.remove(&k))
+    }
+
+    /// Gets the value with the largest key in the mempool.
+    pub fn max_value(&self) -> Option<&V> {
+        self.data.values().next_back()
+    }
+
+    /// Gets the largest key in the mempool.
+    pub fn max_key(&self) -> Option<&K> {
+        self.data.keys().next_back()
+    }
+
+    /// Gets the value with the smallest key in the mempool.
+    pub fn min_value(&self) -> Option<&V> {
+        self.data.values().next()
+    }
+
+    /// Gets the smallest key in the mempool.
+    pub fn min_key(&self) -> Option<&K> {
+        self.data.keys().next()
+    }
+
+    /// Gets the current size of the mempool.
+    pub fn len(&self) -> usize {
+        self.data.len()
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn gets_max() {
+        let mut pool: Mempool<u64, ()> = Mempool::new_with_capacity(10);
+        pool.insert(1, ());
+        pool.insert(2, ());
+        pool.insert(4, ());
+        pool.insert(8, ());
+
+        assert_eq!(pool.max_key(), Some(&8));
+    }
+
+    #[test]
+    fn gets_min() {
+        let mut pool: Mempool<u64, ()> = Mempool::new_with_capacity(10);
+        pool.insert(1, ());
+        pool.insert(2, ());
+        pool.insert(4, ());
+        pool.insert(8, ());
+
+        assert_eq!(pool.min_key(), Some(&1));
+    }
+
+    #[test]
+    fn drops_smallest_at_max() {
+        let pool_size = 6;
+
+        let mut pool: Mempool<u64, ()> = Mempool::new_with_capacity(pool_size);
+        pool.insert(1, ());
+        pool.insert(2, ());
+        pool.insert(4, ());
+        pool.insert(8, ());
+        pool.insert(16, ());
+        pool.insert(32, ());
+
+        assert_eq!(pool.min_key(), Some(&1));
+
+        // Max size exceeded, "1" will be removed.
+        pool.insert(64, ());
+
+        assert_eq!(pool.min_key(), Some(&2));
+        assert_eq!(pool.len(), pool_size);
+
+        // Additional inserts stay at max size
+        for x in 0..100 {
+            pool.insert(x, ());
+            assert_eq!(pool.len(), pool_size);
+        }
     }
 }

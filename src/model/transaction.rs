@@ -66,10 +66,7 @@ impl fmt::Display for Transaction {
         write!(
             f,
             "TxHash={} Gas={} FeePerGas={} Signature={}",
-            self.tx_hash,
-            self.gas,
-            self.fee_per_gas,
-            self.signature
+            self.tx_hash, self.gas, self.fee_per_gas, self.signature
         )
     }
 }
