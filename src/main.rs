@@ -21,7 +21,6 @@ struct Opt {
 
 fn main() -> Result<()> {
     let opt = Opt::from_args();
-    println!("{:?}", &opt);
 
     let transactions = read_to_string(opt.input)?
         .split("\n")
